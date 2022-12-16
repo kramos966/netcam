@@ -1,0 +1,143 @@
+import pygame
+import io
+import sys
+
+from .watcher import CameraWatcher
+
+pygame.init()
+
+class ImageVisualizers(pygame.sprite.Group):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+class VisWindow(pygame.sprite.Sprite):
+    """Visualization windows. They correspond to the physical areas
+    where the images coming from the stream of the cameras are plotted.
+    """
+    def __init__(self, idx, size):
+        super().__init__()
+
+        self.idx = idx
+        self.size = self.w, self.h = size
+
+        # Image and rect, variables used to blit the image
+        self.image = pygame.surface.Surface(size)
+        self.rect = self.image.get_rect()
+
+    def update(self, camviewer):
+        buf = camviewer.get_image(self.idx, timeout=1)
+        self.image_stream = b''+ buf.getbuffer()
+        # FIXME: This logic does not belong in here!!!!!
+        if len(self.image_stream) == 0:
+            raise ConnectionRefusedError
+        full_image = pygame.image.load(buf, ".jpg").convert()
+        pygame.transform.scale(full_image, self.size, dest_surface=self.image)
+
+class CameraViewer:
+    def __init__(self, w, h):
+        self.size = self.w, self.h = w, h
+
+        self.start()
+
+    def start(self):
+        # Ask for the ip addresses of the cameras
+        while True:
+            names = input("IP addresses of the cameras (space separated):\n> ")
+            try:
+                dirs = names.split(" ")
+            except:
+                print("I didn't get that...")
+                continue
+            break
+
+        self.n_cams = len(dirs)
+
+        while True:
+            disp = input("Set the disposition of the viewer (space separated):\n> ")
+            try:
+                geometry = disp.split(" ")
+                geometry = [int(i) for i in geometry]
+                cells = geometry[0] * geometry[1]
+            except:
+                print("I didn't get that...")
+            if len(geometry) != 2:
+                print("Bad geometry")
+            elif geometry[0] * geometry[1] == self.n_cams:
+                break
+            else:
+                continue
+
+
+        self.cams = CameraWatcher(self.n_cams)
+        self.visualizers = ImageVisualizers()  # All visualizer surfaces are contained inside this group
+        
+        # Determining the size of each visualization window, in accordance with the display area
+        vw, vh = self.w//geometry[0], self.h//geometry[1]
+        for k in range(self.n_cams):
+            # Init the connection
+            self.cams.watch_camera((dirs[k], 8000))
+
+            # Get the grid position of the visualizer
+            i, j = k % geometry[0], k // geometry[1]
+            # We create a visualization surface for each number of cameras connected!
+            vis = VisWindow(k, (vw, vh))
+            # We move the position of the visualizer to its corresponding space
+            vis.rect.move((vw*i, vh*j))
+            # Finally, we add it to the group of visualizers
+            self.visualizers.add(vis)
+        
+        self.images = [None for i in range(self.n_cams)]
+
+        # Create a useful clock
+        self.clock = pygame.time.Clock()
+        self.clock.tick()
+        # Open the visualization window
+        self.screen = pygame.display.set_mode(self.size)
+
+    def update_screen(self):
+        self.visualizers.draw(self.screen)
+        pygame.display.flip()
+
+    def get_images(self):
+        self.visualizers.update(self.cams)
+
+    def handle_events(self):
+        events = pygame.event.get()
+        for event in events:
+            if event.type == pygame.QUIT:
+                self.running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    # Save images
+                    self.dump_images()
+
+    def dump_images(self):
+        viss = self.visualizers.sprites()
+        for i, vis in enumerate(viss):
+            with open(f"{i}.jpg", "wb") as imfile:
+                data = vis.image_stream 
+                imfile.write(data)
+
+    def mainloop(self):
+        self.running = True
+
+        while self.running:
+            self.handle_events()
+
+            # TODO: Check all works!!!!!!!
+            self.get_images()
+
+            self.update_screen()        
+
+            self.clock.tick()
+            fps = self.clock.get_fps()
+            pygame.display.set_caption(f"{fps:.3g} fps")
+
+        self.close()
+
+    def close(self):
+        self.cams.close()
+        pygame.quit()
+
+    def __del__(self):
+        self.close()
