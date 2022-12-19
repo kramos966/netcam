@@ -5,7 +5,8 @@ def main():
 
     with TCPCameraServer((host, port), TCPCameraHandler) as server:
         print(f"Serving at {host}, {port}")
-        server.serve_forever()
+        while True:
+            server.handle_request()
 
 if __name__ == "__main__":
     main()

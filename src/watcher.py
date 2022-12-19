@@ -2,7 +2,7 @@ import threading
 import socket
 import io
 
-from .protocol import MsgProtocol, BUF_SIZE, CAM_RECV
+from .protocol import MsgProtocol, BUF_SIZE, CAM_RECV, TIMEOUT
 
 class CameraWatcher(MsgProtocol):
     def __init__(self, n_cameras):
@@ -30,6 +30,7 @@ class CameraWatcher(MsgProtocol):
     def _watch_camera(self, server):
         n_cam = len(self.cameras)-1
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(TIMEOUT)
             sock.connect(server)
             
             # Commence server communication, asking for camera capture

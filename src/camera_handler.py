@@ -1,11 +1,11 @@
 import socketserver
 from .test import FalseCamera, StreamingOutput
 
-from .protocol import MsgProtocol, CAM_RECV, CAM_STOP, CAM_ERROR
+from .protocol import MsgProtocol, CAM_RECV, CAM_STOP, CAM_ERROR, TIMEOUT
 
 class TCPCameraHandler(socketserver.BaseRequestHandler, MsgProtocol):
     # Timeout. If no activity is perceived in timeout seconds, raise exception...
-    timeout = 1    # s
+    timeout = TIMEOUT    # s
 
     def setup(self):
         """Setup the request handler so that it's able to access and read
@@ -46,8 +46,9 @@ class TCPCameraHandler(socketserver.BaseRequestHandler, MsgProtocol):
     def finish(self):
         self.camera.close()
 
-class TCPCameraServer(socketserver.ThreadingTCPServer):
-    timeout = 1 # s, timeout before deeming a connection lost
+class TCPCameraServer(socketserver.TCPServer):
+    """Only serving ONE client at a time!"""
+    timeout = TIMEOUT # s, timeout before deeming a connection lost
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
