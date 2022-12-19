@@ -1,6 +1,7 @@
 import pygame
 import io
 import sys
+import os
 
 from .watcher import CameraWatcher
 
