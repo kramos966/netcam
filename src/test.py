@@ -21,7 +21,7 @@ PAGE = """\
 </html>"""
 
 class FalseCamera:
-    def __init__(self, w=640, h=480):
+    def __init__(self, w=1024, h=768):
         self.w, self.h = self.size = w, h
 
     def capture(self, buf, format):

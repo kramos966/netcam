@@ -6,6 +6,8 @@ from .watcher import CameraWatcher
 
 pygame.init()
 
+FPS_UPDATE_EVT = pygame.USEREVENT + 1
+
 class ImageVisualizers(pygame.sprite.Group):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -90,7 +92,6 @@ class CameraViewer:
 
         # Create a useful clock
         self.clock = pygame.time.Clock()
-        self.clock.tick()
         # Open the visualization window
         self.screen = pygame.display.set_mode(self.size)
 
@@ -110,6 +111,10 @@ class CameraViewer:
                 if event.key == pygame.K_RETURN:
                     # Save images
                     self.dump_images()
+            if event.type == FPS_UPDATE_EVT:
+                fps = self.clock.get_fps()
+                pygame.display.set_caption(f"{fps:.3g} fps")
+
 
     def dump_images(self):
         viss = self.visualizers.sprites()
@@ -121,17 +126,15 @@ class CameraViewer:
     def mainloop(self):
         self.running = True
 
+        pygame.time.set_timer(FPS_UPDATE_EVT, 1000)
         while self.running:
+            self.clock.tick()
             self.handle_events()
 
             # TODO: Check all works!!!!!!!
             self.get_images()
 
             self.update_screen()        
-
-            self.clock.tick()
-            fps = self.clock.get_fps()
-            pygame.display.set_caption(f"{fps:.3g} fps")
 
         self.close()
 

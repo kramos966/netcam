@@ -19,14 +19,14 @@ class MsgProtocol:
 
         # Get the OK from the other part
         if (not self.wait_ok(sock)):
-            raise OSError
+            raise ConnectionRefusedError
 
         # Send the object, per se
         sock.sendall(byteobj)
 
         # Receive OK
         if (not self.wait_ok(sock)):
-            raise OSError
+            raise ConnectionRefusedError
 
     def receive_bytes(self, sock):
         # Receive the length of the message
