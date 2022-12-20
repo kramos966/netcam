@@ -7,15 +7,6 @@ class TCPCameraHandler(socketserver.BaseRequestHandler, MsgProtocol):
     # Timeout. If no activity is perceived in timeout seconds, raise exception...
     timeout = TIMEOUT    # s
 
-    def setup(self):
-        """Setup the request handler so that it's able to access and read
-        the stream originating from the camera."""
-        self.camera = FalseCamera()
-        self.output = StreamingOutput()
-
-        self.camera.start_recording(self.output)
-
-
     def handle(self):
         # Read out the whole request
         print(f"Received request from {self.client_address}")
@@ -42,9 +33,6 @@ class TCPCameraHandler(socketserver.BaseRequestHandler, MsgProtocol):
             pass
 
         print(f"Finished processing request from {self.client_address}")
-
-    def finish(self):
-        self.camera.close()
 
 class TCPCameraServer(socketserver.TCPServer):
     """Only serving ONE client at a time!"""

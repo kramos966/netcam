@@ -28,12 +28,16 @@ class VisWindow(pygame.sprite.Sprite):
         self.image = pygame.surface.Surface(size)
         self.rect = self.image.get_rect()
 
+    def move(self, dr):
+        self.rect.move_ip(dr)
+
     def update(self, camviewer):
         buf = camviewer.get_image(self.idx, timeout=1)
         self.image_stream = b''+ buf.getbuffer()
         # FIXME: This logic does not belong in here!!!!!
         if len(self.image_stream) == 0:
-            raise ConnectionRefusedError
+            return
+            #raise ConnectionRefusedError
         full_image = pygame.image.load(buf, ".jpg").convert()
         pygame.transform.scale(full_image, self.size, dest_surface=self.image)
 
@@ -65,12 +69,18 @@ def load_stdin_data():
     return {"geometry": geometry, "dirs": dirs}
 
 class CameraViewer:
-    def __init__(self, w, h):
+    def __init__(self, w, h, fullscreen=True):
         self.size = self.w, self.h = w, h
 
         self.config = ConfigIO()
 
         self.start()
+
+        # Open the visualization window
+        flags = 0
+        if fullscreen:
+            flags |= pygame.FULLSCREEN
+        self.screen = pygame.display.set_mode(self.size, flags=flags)
 
     def start(self):
         # Load from file if specified
@@ -91,17 +101,17 @@ class CameraViewer:
         self.visualizers = ImageVisualizers()  # All visualizer surfaces are contained inside this group
         
         # Determining the size of each visualization window, in accordance with the display area
-        vw, vh = self.w//geometry[0], self.h//geometry[1]
+        vw, vh = self.w//geometry[1], self.h//geometry[0]
         for k in range(self.n_cams):
             # Init the connection
             self.cams.watch_camera((dirs[k], 8000))
 
             # Get the grid position of the visualizer
-            i, j = k % geometry[0], k // geometry[1]
+            i, j = k // geometry[1], k % geometry[0]
             # We create a visualization surface for each number of cameras connected!
             vis = VisWindow(k, (vw, vh))
             # We move the position of the visualizer to its corresponding space
-            vis.rect.move((vw*i, vh*j))
+            vis.move((vw*i, vh*j))
             # Finally, we add it to the group of visualizers
             self.visualizers.add(vis)
         
@@ -109,8 +119,6 @@ class CameraViewer:
 
         # Create a useful clock
         self.clock = pygame.time.Clock()
-        # Open the visualization window
-        self.screen = pygame.display.set_mode(self.size)
 
     def update_screen(self):
         self.visualizers.draw(self.screen)
@@ -128,6 +136,8 @@ class CameraViewer:
                 if event.key == pygame.K_RETURN:
                     # Save images
                     self.dump_images()
+                if event.key == pygame.K_ESCAPE:
+                    self.running= False
             if event.type == FPS_UPDATE_EVT:
                 fps = self.clock.get_fps()
                 pygame.display.set_caption(f"{fps:.3g} fps")

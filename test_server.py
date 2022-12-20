@@ -1,4 +1,9 @@
-from src import TCPCameraServer, TCPCameraHandler
+from src import TCPCameraServer, TCPCameraHandler, FalseCamera, StreamingOutput
+
+class FalseCameraHandler(TCPCameraHandler):
+    camera = FalseCamera()
+    output = StreamingOutput()
+    camera.start_recording(output)
 
 def main():
     host, port = "localhost", 8000

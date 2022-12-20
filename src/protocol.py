@@ -8,7 +8,7 @@ CAM_ERROR = b'\xbf'
 
 SIZEOF_uint32 = 32
 
-TIMEOUT = 1
+TIMEOUT = 10
 
 class MsgProtocol:
     def __init__(self):
@@ -35,7 +35,7 @@ class MsgProtocol:
         msg = sock.recv(BUF_SIZE)
         if len(msg) == 0:
             # If NO DATA is retrieved, the socket is dead and we must exit out.
-            raise socket.error("Connection dead")
+            raise ConnectionRefusedError
         length = int.from_bytes(msg, "little")
 
         # Send OK
@@ -47,7 +47,7 @@ class MsgProtocol:
             packet = sock.recv(BUF_SIZE)
             if len(packet) == 0:
                 # If NO DATA is retrieved, the socket is dead and we must exit out.
-                raise socket.error("Connection dead")
+                raise ConnectionRefusedError
             msg += packet
         # Send OK
         self.send_ok(sock)
@@ -63,6 +63,6 @@ class MsgProtocol:
             packet = sock.recv(BUF_SIZE)
             if len(packet) == 0:
                 # If NO DATA is retrieved, the socket is dead and we must exit out.
-                raise socket.error("Connection dead")
+                raise ConnectionRefusedError
             msg += packet
         return msg == PROTOCOL_OK
