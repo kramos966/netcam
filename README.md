@@ -16,8 +16,8 @@ it will be taken as the name of the JSON configuration file, containing
 the following two fields
 ```json
 {
-    "geometry": [n, m]
-    "dirs"    : [ip0, ip1, ..., ipn*m]
+    "geometry": ["n", "m"]
+    "dirs"    : ["ip_0", "ip_1", ..., "ip_n*m"]
 }
 ```
 which are just the geometry and IP directions of our cameras.
