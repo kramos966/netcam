@@ -4,10 +4,11 @@ import sys
 import os
 
 from .watcher import CameraWatcher
+from .config_io import ConfigIO
 
 pygame.init()
 
-FPS_UPDATE_EVT = pygame.USEREVENT + 1
+FPS_UPDATE_EVT = pygame.event.custom_type()
 
 class ImageVisualizers(pygame.sprite.Group):
     def __init__(self, *args, **kwargs):
@@ -36,40 +37,55 @@ class VisWindow(pygame.sprite.Sprite):
         full_image = pygame.image.load(buf, ".jpg").convert()
         pygame.transform.scale(full_image, self.size, dest_surface=self.image)
 
+def load_stdin_data():
+    # Ask for the ip addresses of the cameras
+    while True:
+        names = input("IP addresses of the cameras (space separated):\n> ")
+        try:
+            dirs = names.split(" ")
+        except:
+            print("I didn't get that...")
+            continue
+        break
+
+    while True:
+        disp = input("Set the disposition of the viewer (space separated):\n> ")
+        try:
+            geometry = disp.split(" ")
+            geometry = [int(i) for i in geometry]
+            cells = geometry[0] * geometry[1]
+        except:
+            print("I didn't get that...")
+        if len(geometry) != 2:
+            print("Bad geometry")
+        elif geometry[0] * geometry[1] == len(dirs):
+            break
+        else:
+            continue
+    return {"geometry": geometry, "dirs": dirs}
+
 class CameraViewer:
     def __init__(self, w, h):
         self.size = self.w, self.h = w, h
 
+        self.config = ConfigIO()
+
         self.start()
 
     def start(self):
-        # Ask for the ip addresses of the cameras
-        while True:
-            names = input("IP addresses of the cameras (space separated):\n> ")
+        # Load from file if specified
+        if len(sys.argv) == 2:
             try:
-                dirs = names.split(" ")
-            except:
-                print("I didn't get that...")
-                continue
-            break
+                fname = sys.argv[1]
+                data = self.config.load(fname)
+            except UnboundLocalError:
+                pass
+        else:
+            data = load_stdin_data()
 
+        geometry = data["geometry"]
+        dirs = data["dirs"]
         self.n_cams = len(dirs)
-
-        while True:
-            disp = input("Set the disposition of the viewer (space separated):\n> ")
-            try:
-                geometry = disp.split(" ")
-                geometry = [int(i) for i in geometry]
-                cells = geometry[0] * geometry[1]
-            except:
-                print("I didn't get that...")
-            if len(geometry) != 2:
-                print("Bad geometry")
-            elif geometry[0] * geometry[1] == self.n_cams:
-                break
-            else:
-                continue
-
 
         self.cams = CameraWatcher(self.n_cams)
         self.visualizers = ImageVisualizers()  # All visualizer surfaces are contained inside this group
@@ -144,4 +160,7 @@ class CameraViewer:
         pygame.quit()
 
     def __del__(self):
-        self.close()
+        try:
+            self.close()
+        except:
+            pass

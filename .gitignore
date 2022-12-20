@@ -137,3 +137,6 @@ dmypy.json
 
 # VIM swap files
 *.swp
+
+# Program config files
+*.json
