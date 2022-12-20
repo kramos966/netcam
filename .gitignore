@@ -131,6 +131,7 @@ dmypy.json
 # Image files
 *.jpg
 *.jpeg
+!cover.jpg
 *.png
 *.bmp
 *.dng
