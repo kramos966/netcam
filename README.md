@@ -17,7 +17,7 @@ the following two fields
 ```json
 {
     "geometry": ["n", "m"]
-    "dirs"    : ["ip_0", "ip_1", ..., "ip_n*m"]
+    "dirs"    : ["ip_0", "ip_1", "...", "ip_n*m"]
 }
 ```
 which are just the geometry and IP directions of our cameras.
