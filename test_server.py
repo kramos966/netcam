@@ -8,7 +8,7 @@ class FalseCameraHandler(TCPCameraHandler):
 def main():
     host, port = "localhost", 8000
 
-    with TCPCameraServer((host, port), TCPCameraHandler) as server:
+    with TCPCameraServer((host, port), FalseCameraHandler) as server:
         print(f"Serving at {host}, {port}")
         while True:
             server.handle_request()
