@@ -27,16 +27,26 @@ class CameraWatcher(MsgProtocol):
             frame = self.images[n_cam]
         return frame
 
+    def __set_shutter_speed(self, server, shutter_speed):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(TIMEOUT)
+            sock.connect(server)
+            
+            # Commence server communication, asking for speed change
+            self.send_bytes(sock, CAM_SET_SHUTTER)
+            self.send_string(sock, str(shutter_speed))
+
     def _watch_camera(self, server, shutter_speed=None):
         n_cam = len(self.cameras)-1
+
+        if shutter_speed:
+            self.__set_shuter_speed(server, shutter_speed)
+
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.settimeout(TIMEOUT)
             sock.connect(server)
             
             # Commence server communication, asking for camera capture
-            if shutter_speed:
-                self.send_bytes(sock, CAM_SET_SHUTTER)
-                self.send_string(sock, str(shutter_speed))
             self.send_bytes(sock, CAM_RECV)
             while True:
                 if self.stop_event.is_set():
