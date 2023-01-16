@@ -40,7 +40,7 @@ class CameraWatcher(MsgProtocol):
         n_cam = len(self.cameras)-1
 
         if shutter_speed:
-            self.__set_shuter_speed(server, shutter_speed)
+            self.__set_shutter_speed(server, shutter_speed)
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.settimeout(TIMEOUT)
