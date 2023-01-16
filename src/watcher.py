@@ -2,7 +2,7 @@ import threading
 import socket
 import io
 
-from .protocol import MsgProtocol, BUF_SIZE, CAM_RECV, TIMEOUT
+from .protocol import MsgProtocol, BUF_SIZE, CAM_RECV, TIMEOUT, CAM_SET_SHUTTER
 
 class CameraWatcher(MsgProtocol):
     def __init__(self, n_cameras):
@@ -14,9 +14,9 @@ class CameraWatcher(MsgProtocol):
 
         self.cameras = {}
 
-    def watch_camera(self, server):
+    def watch_camera(self, server, shutter_speed=None):
         n_cam = len(self.cameras)-1
-        t = threading.Thread(target=self._watch_camera, args=(server,))
+        t = threading.Thread(target=self._watch_camera, args=(server,), kwargs={"shutter_speed":shutter_speed})
         self.cameras[n_cam] = t
         t.daemon = True
         t.start()
@@ -27,13 +27,16 @@ class CameraWatcher(MsgProtocol):
             frame = self.images[n_cam]
         return frame
 
-    def _watch_camera(self, server):
+    def _watch_camera(self, server, shutter_speed=None):
         n_cam = len(self.cameras)-1
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.settimeout(TIMEOUT)
             sock.connect(server)
             
             # Commence server communication, asking for camera capture
+            if shutter_speed:
+                self.send_bytes(sock, CAM_SET_SHUTTER)
+                self.send_string(sock, str(shutter_speed))
             self.send_bytes(sock, CAM_RECV)
             while True:
                 if self.stop_event.is_set():

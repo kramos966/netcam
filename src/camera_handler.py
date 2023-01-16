@@ -1,7 +1,7 @@
 import socketserver
 from .test import FalseCamera, StreamingOutput
 
-from .protocol import MsgProtocol, CAM_RECV, CAM_STOP, CAM_ERROR, TIMEOUT
+from .protocol import MsgProtocol, CAM_RECV, CAM_STOP, CAM_ERROR, TIMEOUT, CAM_SET_SHUTTER
 
 class TCPCameraHandler(socketserver.BaseRequestHandler, MsgProtocol):
     # Timeout. If no activity is perceived in timeout seconds, raise exception...
@@ -28,11 +28,17 @@ class TCPCameraHandler(socketserver.BaseRequestHandler, MsgProtocol):
                     except:
                         print(f"Shutting down connexion with {self.client_address}")
                         break
+        elif msg == CAM_SET_SHUTTER:
+            shutter_speed = self.receive_string(self.request)
+            self.set_shutter_speed(int(shutter_speed))
 
         elif msg == CAM_STOP:
             pass
 
         print(f"Finished processing request from {self.client_address}")
+
+    def set_shutter_speed(self, shutter_speed):
+        pass
 
 class TCPCameraServer(socketserver.TCPServer):
     """Only serving ONE client at a time!"""

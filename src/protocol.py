@@ -5,6 +5,7 @@ PROTOCOL_OK = b'\xbe'
 CAM_RECV = b'\x01'
 CAM_STOP = b'\xff'
 CAM_ERROR = b'\xbf'
+CAM_SET_SHUTTER = b'\xea'
 
 SIZEOF_uint32 = 32
 
@@ -53,6 +54,15 @@ class MsgProtocol:
         self.send_ok(sock)
         
         return msg
+
+    def send_string(self, sock, string):
+        # Convert string to utf-8
+        bts = string.encode("utf-8")
+        self.send_bytes(sock, bts)
+
+    def receive_string(self, sock):
+        msg = self.receive_bytes(sock)
+        return str(msg, encoding="utf-8")
 
     def send_ok(self, sock):
         sock.sendall(PROTOCOL_OK)
