@@ -14,6 +14,9 @@ class PiCameraHandler(TCPCameraHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def set_shutter_speed(self, shutter_speed):
+        self.camera.shutter_speed = shutter_speed
+
 
 if __name__ == "__main__":
     host, port = "0.0.0.0", 8000
