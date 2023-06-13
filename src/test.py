@@ -31,6 +31,7 @@ class FalseCamera:
             self.t.join()
 
 class StreamingOutput:
+    maxsize = int(2**18)
     def __init__(self):
         self.frame = None
         self.buffer = io.BytesIO()
@@ -39,7 +40,8 @@ class StreamingOutput:
     def write(self, buf):
         if buf.startswith(b'\xff\xd8'):
             # Ha començat un nou frame
-            self.buffer.truncate()
+            # 20230331: Trec el truncate perquè sembla no funcionar gaire bé...
+            self.buffer.truncate(self.maxsize)
             with self.condition:
                 self.frame = self.buffer.getvalue()
                 self.condition.notify_all()

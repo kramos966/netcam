@@ -10,19 +10,20 @@ pygame.init()
 
 FPS_UPDATE_EVT = pygame.event.custom_type()
 
-class ImageVisualizers(pygame.sprite.Group):
+class ImageVisualizers(pygame.sprite.RenderUpdates):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-class VisWindow(pygame.sprite.Sprite):
+class VisWindow(pygame.sprite.DirtySprite):
     """Visualization windows. They correspond to the physical areas
     where the images coming from the stream of the cameras are plotted.
     """
-    def __init__(self, idx, size):
+    def __init__(self, idx, size, flip=False):
         super().__init__()
 
         self.idx = idx
         self.size = self.w, self.h = size
+        self.flip = flip
 
         # Image and rect, variables used to blit the image
         self.image = pygame.surface.Surface(size)
@@ -40,6 +41,9 @@ class VisWindow(pygame.sprite.Sprite):
             #raise ConnectionRefusedError
         full_image = pygame.image.load(buf, ".jpg").convert()
         pygame.transform.scale(full_image, self.size, dest_surface=self.image)
+        if self.flip:
+            self.image = pygame.transform.flip(self.image, 1, 1)
+        self.dirty = True
 
 def load_stdin_data():
     # Ask for the ip addresses of the cameras
@@ -107,9 +111,12 @@ class CameraViewer:
             self.cams.watch_camera((dirs[k], 8000))
 
             # Get the grid position of the visualizer
-            i, j = k // geometry[1], k % geometry[0]
+            i, j = k % geometry[1], k // geometry[0]
             # We create a visualization surface for each number of cameras connected!
-            vis = VisWindow(k, (vw, vh))
+            if j == 0:
+                vis = VisWindow(k, (vw, vh), flip=True)
+            else:
+                vis = VisWindow(k, (vw, vh), flip=False)
             # We move the position of the visualizer to its corresponding space
             vis.move((vw*i, vh*j))
             # Finally, we add it to the group of visualizers
@@ -121,8 +128,8 @@ class CameraViewer:
         self.clock = pygame.time.Clock()
 
     def update_screen(self):
-        self.visualizers.draw(self.screen)
-        pygame.display.flip()
+        rects = self.visualizers.draw(self.screen)
+        pygame.display.update(rects)
 
     def get_images(self):
         self.visualizers.update(self.cams)

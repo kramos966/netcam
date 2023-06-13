@@ -5,7 +5,7 @@ from src import TCPCameraServer, TCPCameraHandler, StreamingOutput
 class PiCameraHandler(TCPCameraHandler):
     output = StreamingOutput()
     camera = picamera.PiCamera()
-    camera.resolution = 1280, 960
+    camera.resolution = 1980, 1080
     camera.start_recording(output, format="mjpeg")
     # Let the camera stabilize into sensible values of gain
     time.sleep(2)
