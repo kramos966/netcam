@@ -2,7 +2,7 @@ import threading
 import socket
 import io
 
-from .protocol import MsgProtocol, BUF_SIZE, CAM_RECV, TIMEOUT, CAM_SET_SHUTTER
+from .protocol import MsgProtocol, BUF_SIZE, CAM_RECV, TIMEOUT, CAM_SET_SHUTTER, CAM_STILL_CAPTURE
 
 class CameraWatcher(MsgProtocol):
     def __init__(self, n_cameras):
@@ -15,7 +15,9 @@ class CameraWatcher(MsgProtocol):
         self.cameras = {}
 
     def watch_camera(self, server, shutter_speed=None):
-        n_cam = len(self.cameras)-1
+        n_cam = len(self.cameras)   # Creating a new camera
+        self.server = server
+        self.shutter_speed = shutter_speed
         t = threading.Thread(target=self._watch_camera, args=(server,), kwargs={"shutter_speed":shutter_speed})
         self.cameras[n_cam] = t
         t.daemon = True
@@ -25,6 +27,30 @@ class CameraWatcher(MsgProtocol):
         with self.conditions[n_cam]:
             self.conditions[n_cam].wait(timeout=timeout)
             frame = self.images[n_cam]
+
+        return frame
+
+    def get_still_image(self, n_cam, timeout=None):
+        # We momentarily stop the continuous capture to get a still, hq image
+        self.stop_event.set()
+        t = self.cameras[n_cam]
+        t.join()
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(TIMEOUT)
+            sock.connect(self.server)
+
+            self.send_bytes(sock, CAM_STILL_CAPTURE)
+
+            # Receive the whole frame
+            print("receiving and shit")
+            frame = self.receive_bytes(sock)
+
+        self.stop_event.clear()
+        # Once done, restart the continuous capture
+        t = threading.Thread(target=self._watch_camera, args=(self.server,), kwargs={"shutter_speed":self.shutter_speed})
+        self.cameras[n_cam] = t
+        t.daemon = True
+        t.start()
         return frame
 
     def __set_shutter_speed(self, server, shutter_speed):
@@ -37,7 +63,7 @@ class CameraWatcher(MsgProtocol):
             self.send_string(sock, str(shutter_speed))
 
     def _watch_camera(self, server, shutter_speed=None):
-        n_cam = len(self.cameras)-1
+        n_cam = len(self.cameras) - 1
 
         if shutter_speed:
             self.__set_shutter_speed(server, shutter_speed)

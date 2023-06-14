@@ -6,10 +6,11 @@ CAM_RECV = b'\x01'
 CAM_STOP = b'\xff'
 CAM_ERROR = b'\xbf'
 CAM_SET_SHUTTER = b'\xea'
+CAM_STILL_CAPTURE = b'\xca'
 
 SIZEOF_uint32 = 32
 
-TIMEOUT = 10
+TIMEOUT = 20
 
 class MsgProtocol:
     def __init__(self):

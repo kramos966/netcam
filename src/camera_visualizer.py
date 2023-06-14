@@ -134,6 +134,12 @@ class CameraViewer:
     def get_images(self):
         self.visualizers.update(self.cams)
 
+    def get_still_images(self):
+        for i in range(self.n_cams):
+            frame = self.cams.get_still_image(i, timeout=None)
+            with open(f"{i}.jpg", "wb") as image_file:
+                image_file.write(frame)
+
     def handle_events(self):
         events = pygame.event.get()
         for event in events:
@@ -151,11 +157,12 @@ class CameraViewer:
 
 
     def dump_images(self):
-        viss = self.visualizers.sprites()
-        for i, vis in enumerate(viss):
-            with open(f"{i}.jpg", "wb") as imfile:
-                data = vis.image_stream 
-                imfile.write(data)
+        #viss = self.visualizers.sprites()
+        #for i, vis in enumerate(viss):
+        #    with open(f"{i}.jpg", "wb") as imfile:
+        #        data = vis.image_stream 
+        #        imfile.write(data)
+        self.get_still_images()
 
     def mainloop(self):
         self.running = True

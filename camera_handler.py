@@ -1,7 +1,7 @@
 import socketserver
 from .test import FalseCamera, StreamingOutput
 
-from .protocol import MsgProtocol, CAM_RECV, CAM_STOP, CAM_ERROR, TIMEOUT, CAM_SET_SHUTTER, CAM_STILL_CAPTURE
+from .protocol import MsgProtocol, CAM_RECV, CAM_STOP, CAM_ERROR, TIMEOUT, CAM_SET_SHUTTER
 
 class TCPCameraHandler(socketserver.BaseRequestHandler, MsgProtocol):
     # Timeout. If no activity is perceived in timeout seconds, raise exception...
@@ -33,12 +33,7 @@ class TCPCameraHandler(socketserver.BaseRequestHandler, MsgProtocol):
             self.set_shutter_speed(int(shutter_speed))
 
         elif msg == CAM_STILL_CAPTURE:
-            print(f"Sending still to {self.client_address}")
-            buffer = self.still_capture()
-            try:
-                self.send_bytes(self.request, buffer)
-            except TimeoutError:
-                print(f"Timed out while sending still with {self.client_address}")
+            self._still_capture()
 
         elif msg == CAM_STOP:
             pass
@@ -50,6 +45,12 @@ class TCPCameraHandler(socketserver.BaseRequestHandler, MsgProtocol):
 
     def still_capture(self):
         raise NotImplementedError()
+
+    def _still_capture(self):
+        # Discard all contents of the buffer to make room for the new full frame
+        self.buffer.seek(0)
+        self.still_capture()
+        
 
 class TCPCameraServer(socketserver.TCPServer):
     """Only serving ONE client at a time!"""
