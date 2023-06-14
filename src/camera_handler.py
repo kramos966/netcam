@@ -1,7 +1,7 @@
 import socketserver
 from .test import FalseCamera, StreamingOutput
 
-from .protocol import MsgProtocol, CAM_RECV, CAM_STOP, CAM_ERROR, TIMEOUT, CAM_SET_SHUTTER, CAM_STILL_CAPTURE
+from .protocol import MsgProtocol, CAM_RECV, CAM_STOP, CAM_ERROR, TIMEOUT, CAM_SET_OPTIONS, CAM_STILL_CAPTURE
 
 class TCPCameraHandler(socketserver.BaseRequestHandler, MsgProtocol):
     # Timeout. If no activity is perceived in timeout seconds, raise exception...
@@ -28,9 +28,9 @@ class TCPCameraHandler(socketserver.BaseRequestHandler, MsgProtocol):
                     except:
                         print(f"Shutting down connexion with {self.client_address}")
                         break
-        elif msg == CAM_SET_SHUTTER:
-            shutter_speed = self.receive_string(self.request)
-            self.set_shutter_speed(int(shutter_speed))
+        elif msg == CAM_SET_OPTIONS:
+            options = self.receive_string(self.request)
+            self.set_camera_options()
 
         elif msg == CAM_STILL_CAPTURE:
             print(f"Sending still to {self.client_address}")
@@ -45,7 +45,7 @@ class TCPCameraHandler(socketserver.BaseRequestHandler, MsgProtocol):
 
         print(f"Finished processing request from {self.client_address}")
 
-    def set_shutter_speed(self, shutter_speed):
+    def set_camera_options(self, **options):
         raise NotImplementedError()
 
     def still_capture(self):

@@ -2,7 +2,7 @@ import threading
 import socket
 import io
 
-from .protocol import MsgProtocol, BUF_SIZE, CAM_RECV, TIMEOUT, CAM_SET_SHUTTER, CAM_STILL_CAPTURE
+from .protocol import MsgProtocol, BUF_SIZE, CAM_RECV, TIMEOUT, CAM_SET_OPTIONS, CAM_STILL_CAPTURE
 
 class CameraWatcher(MsgProtocol):
     def __init__(self, n_cameras):
@@ -14,11 +14,11 @@ class CameraWatcher(MsgProtocol):
 
         self.cameras = {}
 
-    def watch_camera(self, server, shutter_speed=None):
+    def watch_camera(self, server, ExposureTime=None):
         n_cam = len(self.cameras)   # Creating a new camera
         self.server = server
-        self.shutter_speed = shutter_speed
-        t = threading.Thread(target=self._watch_camera, args=(server,), kwargs={"shutter_speed":shutter_speed})
+        self.ExposureTime = ExposureTime
+        t = threading.Thread(target=self._watch_camera, args=(server,), kwargs={"ExposureTime":ExposureTime})
         self.cameras[n_cam] = t
         t.daemon = True
         t.start()
@@ -42,31 +42,30 @@ class CameraWatcher(MsgProtocol):
             self.send_bytes(sock, CAM_STILL_CAPTURE)
 
             # Receive the whole frame
-            print("receiving and shit")
             frame = self.receive_bytes(sock)
 
         self.stop_event.clear()
         # Once done, restart the continuous capture
-        t = threading.Thread(target=self._watch_camera, args=(self.server,), kwargs={"shutter_speed":self.shutter_speed})
+        t = threading.Thread(target=self._watch_camera, args=(self.server,), kwargs={"ExposureTime":self.ExposureTime})
         self.cameras[n_cam] = t
         t.daemon = True
         t.start()
         return frame
 
-    def __set_shutter_speed(self, server, shutter_speed):
+    def __set_options(self, server, **options):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.settimeout(TIMEOUT)
             sock.connect(server)
             
             # Commence server communication, asking for speed change
-            self.send_bytes(sock, CAM_SET_SHUTTER)
-            self.send_string(sock, str(shutter_speed))
+            self.send_bytes(sock, CAM_SET_OPTIONS)
+            self.send_json(sock, options)
 
-    def _watch_camera(self, server, shutter_speed=None):
+    def _watch_camera(self, server, **options):
         n_cam = len(self.cameras) - 1
 
-        if shutter_speed:
-            self.__set_shutter_speed(server, shutter_speed)
+        if options:
+            self.__set_options(server, **options)
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.settimeout(TIMEOUT)
