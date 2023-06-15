@@ -20,9 +20,11 @@ class PiCameraHandler(TCPCameraHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def set_shutter_speed(self, shutter_speed):
-        #self.camera.shutter_speed = shutter_speed
-        pass
+    def set_camera_options(self, **options):
+        with self.camera.controls as controls:
+            for option in options:
+                value = options[option]
+                controls[option] = value
 
     def still_capture(self):
         still_output = io.BytesIO()
